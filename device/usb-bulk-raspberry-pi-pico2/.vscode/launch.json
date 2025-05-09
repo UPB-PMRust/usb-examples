@@ -5,10 +5,10 @@
             "preLaunchTask": "rust: cargo build",
             "type": "probe-rs-debug",
             "request": "launch",
-            "name": "STM32 Nucleu F429ZI",
+            "name": "Raspberry Pi Pico 2",
             "cwd": "${workspaceFolder}",
             "connectUnderReset": false,
-            "chip": "STM32F429ZITx",
+            "chip": "RP235x",
             "flashingConfig": {
                 "flashingEnabled": true,
                 "haltAfterReset": false,
@@ -17,7 +17,7 @@
                 {
                     "coreIndex": 0,
                     "programBinary": "./target/thumbv8m.main-none-eabihf/debug/${workspaceFolderBasename}",
-                    "svdFile": "./stm32f429zi.svd",
+                    "svdFile": "./rp2350.svd",
                     "rttEnabled": true,
                 }
             ]
