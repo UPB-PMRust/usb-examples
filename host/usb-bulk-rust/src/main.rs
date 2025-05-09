@@ -62,7 +62,7 @@ fn main() {
                 eprintln!("Error {e}");
             }
         } else {
-            eprintln!("Device not found, waiting for 1 s");
+            eprintln!("Device not found, retrying for 1 s");
             thread::sleep(Duration::from_secs(1));
         }
     }
