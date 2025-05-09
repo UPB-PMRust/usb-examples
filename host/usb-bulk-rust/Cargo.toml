@@ -1,0 +1,9 @@
+[package]
+name = "usb-bulk-rust"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.98"
+env_logger = "0.11.8"
+nusb = { git = "https://github.com/kevinmehall/nusb", rev = "e1796a8" }
