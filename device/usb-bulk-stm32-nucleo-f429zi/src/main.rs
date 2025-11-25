@@ -7,7 +7,8 @@ use embassy_executor::Spawner;
 use embassy_futures::join::join;
 use embassy_stm32::{
     Config, bind_interrupts,
-    peripherals::USB,
+    peripherals::USB_OTG_FS,
+    time::Hertz,
     usb::{Driver, InterruptHandler},
 };
 use embassy_time::Timer;
@@ -19,7 +20,7 @@ use panic_probe as _;
 const DEVICE_INTERFACE_GUIDS: &[&str] = &["{AFB9A6FB-30BA-44BC-9232-806CFC875321}"];
 
 bind_interrupts!(struct Irqs {
-    USB => InterruptHandler<USB>;
+    OTG_FS => InterruptHandler<USB_OTG_FS>;
 });
 
 #[embassy_executor::main]
@@ -29,27 +30,38 @@ async fn main(_spawner: Spawner) {
     let mut config = Config::default();
     {
         use embassy_stm32::rcc::*;
-
-        // Do not configure HSE or PLLs.
-        config.rcc.hsi = true;
-        config.rcc.sys = Sysclk::HSI; // System clock is now 16MHz
-
-        config.rcc.hsi48 = Some(Hsi48Config {
-            sync_from_usb: false, // Must be false
+        config.rcc.hse = Some(Hse {
+            freq: Hertz(8_000_000),
+            mode: HseMode::Bypass,
         });
-
-        config.rcc.mux.iclksel = mux::Iclksel::HSI48;
-
-        config.rcc.voltage_range = VoltageScale::RANGE2;
+        config.rcc.pll_src = PllSource::HSE;
+        config.rcc.pll = Some(Pll {
+            prediv: PllPreDiv::DIV4,
+            mul: PllMul::MUL168,
+            divp: Some(PllPDiv::DIV2), // 8mhz / 4 * 168 / 2 = 168Mhz.
+            divq: Some(PllQDiv::DIV7), // 8mhz / 4 * 168 / 7 = 48Mhz.
+            divr: None,
+        });
+        config.rcc.ahb_pre = AHBPrescaler::DIV1;
+        config.rcc.apb1_pre = APBPrescaler::DIV4;
+        config.rcc.apb2_pre = APBPrescaler::DIV2;
+        config.rcc.sys = Sysclk::PLL1_P;
+        config.rcc.mux.clk48sel = mux::Clk48sel::PLL1_Q;
     }
     // make sure you provide the `config` parameter here instead of `Default::default()`
     let peripherals = embassy_stm32::init(config);
 
-    // let mut config = embassy_stm32::usb::Config::default();
+    let mut ep_out_buffer = [0u8; 256];
+    let config = embassy_stm32::usb::Config::default();
 
-    // config.vbus_detection = false;
-
-    let driver = Driver::new(peripherals.USB, Irqs, peripherals.PA12, peripherals.PA11);
+    let driver = Driver::new_fs(
+        peripherals.USB_OTG_FS,
+        Irqs,
+        peripherals.PA12,
+        peripherals.PA11,
+        &mut ep_out_buffer,
+        config,
+    );
 
     // Create embassy-usb Config
     let mut config = UsbConfig::new(0xc0de, 0xcafe);
