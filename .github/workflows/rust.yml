@@ -39,9 +39,9 @@ jobs:
       - name: Clippy Devices
         run: |
           cd device
-          echo Clippy $package
           for package in $(ls -d usb*); do
-            (cd $package && cargo clippy -- --Dwarnings)
+            echo Clippy $package
+            (cd $package && cargo clippy -- -Dwarnings)
           done
       - name: Clippy Rust Host
         run: |
