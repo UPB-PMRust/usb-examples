@@ -28,8 +28,6 @@ async fn main(_spawner: Spawner) {
     info!("Hello");
 
     let mut config = Config::default();
-
-    // Setup the RCC (Clocks) so that we can use the USB
     {
         use embassy_stm32::rcc::*;
         config.rcc.hse = Some(Hse {
@@ -50,14 +48,11 @@ async fn main(_spawner: Spawner) {
         config.rcc.sys = Sysclk::PLL1_P;
         config.rcc.mux.clk48sel = mux::Clk48sel::PLL1_Q;
     }
-
     // make sure you provide the `config` parameter here instead of `Default::default()`
     let peripherals = embassy_stm32::init(config);
 
     let mut ep_out_buffer = [0u8; 256];
-    let mut config = embassy_stm32::usb::Config::default();
-
-    config.vbus_detection = false;
+    let config = embassy_stm32::usb::Config::default();
 
     let driver = Driver::new_fs(
         peripherals.USB_OTG_FS,
@@ -110,8 +105,8 @@ async fn main(_spawner: Spawner) {
     let mut function = builder.function(0xFF, 0, 0);
     let mut interface = function.interface();
     let mut alt = interface.alt_setting(0xFF, 0, 0, None);
-    let mut read_ep = alt.endpoint_bulk_out(64);
-    let mut write_ep = alt.endpoint_bulk_in(64);
+    let mut read_ep = alt.endpoint_bulk_out(None, 64);
+    let mut write_ep = alt.endpoint_bulk_in(None, 64);
     drop(function);
 
     // Build the builder.
